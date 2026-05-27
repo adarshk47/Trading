@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+        <!-- ── HEADER ── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="ScalpAI"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:fontFamily="monospace"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="NSE F&amp;O Signals"
+                android:textSize="11sp"
+                android:textColor="@color/text_dim"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Automatically detects stocks from any app and shows CALL/PUT signal"
+            android:textSize="12sp"
+            android:textColor="@color/text_muted"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- ── PERMISSIONS CARD ── -->
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="STEP 1 — PERMISSIONS"
+            android:textSize="10sp" android:textColor="@color/text_dim"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="8dp"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@color/card_bg"
+            app:cardCornerRadius="14dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <!-- Overlay Permission -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Draw Over Apps" android:textColor="@color/white" android:textSize="14sp"/>
+                        <TextView
+                            android:id="@+id/tvOverlayStatus"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Checking…" android:textSize="11sp"/>
+                    </LinearLayout>
+                    <Button
+                        android:id="@+id/btnOverlayPermission"
+                        android:layout_width="wrap_content" android:layout_height="36dp"
+                        android:text="Grant" android:textSize="12sp"
+                        android:backgroundTint="@color/accent_blue"
+                        android:paddingStart="16dp" android:paddingEnd="16dp"/>
+                </LinearLayout>
+
+                <!-- Accessibility Permission -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Accessibility Service" android:textColor="@color/white" android:textSize="14sp"/>
+                        <TextView
+                            android:id="@+id/tvAccessibilityStatus"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Checking…" android:textSize="11sp"/>
+                    </LinearLayout>
+                    <Button
+                        android:id="@+id/btnAccessibilityPermission"
+                        android:layout_width="wrap_content" android:layout_height="36dp"
+                        android:text="Enable" android:textSize="12sp"
+                        android:backgroundTint="@color/accent_blue"
+                        android:paddingStart="16dp" android:paddingEnd="16dp"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- ── MANUAL SEARCH ── -->
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="STEP 2 — MANUAL SEARCH"
+            android:textSize="10sp" android:textColor="@color/text_dim"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="8dp"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            app:cardBackgroundColor="@color/card_bg"
+            app:cardCornerRadius="14dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical">
+
+                    <EditText
+                        android:id="@+id/etSymbol"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:hint="Enter symbol e.g. SBIN"
+                        android:textAllCaps="true"
+                        android:textSize="15sp"
+                        android:textColor="@color/white"
+                        android:textColorHint="@color/text_dim"
+                        android:background="@drawable/edit_bg"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:inputType="textCapCharacters"
+                        android:fontFamily="monospace"
+                        android:layout_marginEnd="10dp"/>
+
+                    <Button
+                        android:id="@+id/btnSearch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:text="GET SIGNAL"
+                        android:textSize="12sp"
+                        android:backgroundTint="@color/accent_green"
+                        android:textColor="@color/bg_dark"
+                        android:textStyle="bold"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp"/>
+                </LinearLayout>
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Quick pick:"
+                    android:textSize="11sp" android:textColor="@color/text_dim"
+                    android:layout_marginTop="14dp" android:layout_marginBottom="8dp"/>
+
+                <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <LinearLayout
+                        android:id="@+id/chipContainer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"/>
+                </HorizontalScrollView>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- ── SETTINGS ── -->
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="SETTINGS"
+            android:textSize="10sp" android:textColor="@color/text_dim"
+            android:letterSpacing="0.15"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="8dp"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@color/card_bg"
+            app:cardCornerRadius="14dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="18dp">
+
+                <!-- Min Confidence -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:layout_marginBottom="6dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Min confidence to show popup"
+                        android:textColor="@color/white" android:textSize="13sp"/>
+                    <TextView
+                        android:id="@+id/tvConfidenceValue"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="60%"
+                        android:textColor="@color/accent_green" android:textSize="15sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <SeekBar
+                    android:id="@+id/seekConfidence"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:max="100" android:progress="60"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Show WAIT signals -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Show WAIT/skip signals too"
+                        android:textColor="@color/white" android:textSize="13sp"/>
+                    <Switch
+                        android:id="@+id/switchShowWait"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- ── HOW IT WORKS ── -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
+            app:cardBackgroundColor="@color/card_bg"
+            app:cardCornerRadius="14dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="18dp">
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="HOW IT WORKS"
+                    android:textSize="11sp" android:textColor="@color/accent_gold"
+                    android:textStyle="bold" android:layout_marginBottom="10dp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="1. Open Zerodha Kite / Groww / NSE app\n2. Scroll through any watchlist or F&amp;O chain\n3. ScalpAI reads stock symbols from the screen\n4. Fetches live data from Yahoo Finance\n5. Pops up CALL / PUT / WAIT signal\n   with confidence %, strike &amp; stop loss"
+                    android:textSize="12sp" android:textColor="@color/text_muted"
+                    android:lineSpacingMultiplier="1.6"/>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+</ScrollView>
