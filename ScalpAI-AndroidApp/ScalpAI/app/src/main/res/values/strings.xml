@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ScalpAI</string>
+    <string name="accessibility_service_label">ScalpAI Stock Signal</string>
+    <string name="accessibility_service_description">Reads stock symbols from your screen (Zerodha, Groww, NSE app etc.) and shows CALL/PUT signal popups automatically.</string>
+    <string name="accessibility_service_summary">Auto-detects stocks on screen</string>
+</resources>
