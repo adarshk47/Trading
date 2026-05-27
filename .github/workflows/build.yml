@@ -5,6 +5,10 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+env:
+  ANDROID_HOME: /usr/local/lib/android/sdk
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,31 +23,38 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Extract ScalpAI project from ZIP
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Show project structure
         run: |
-          unzip -q ScalpAI-AndroidApp.zip -d project
-          echo "=== Extracted structure ==="
-          ls -la project/
-          find project -name "gradlew" | head -5
-          find project -name "build.gradle" | head -5
+          echo "=== Repo root ==="
+          ls -la
+          echo "=== ScalpAI project dir ==="
+          ls -la ScalpAI-AndroidApp/ScalpAI/
+          echo "=== app dir ==="
+          ls -la ScalpAI-AndroidApp/ScalpAI/app/ || true
+
+      - name: Generate Gradle wrapper
+        working-directory: ScalpAI-AndroidApp/ScalpAI
+        run: gradle wrapper --gradle-version 8.4 --distribution-type bin
+
+      - name: Accept Android SDK licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/*/bin/sdkmanager --licenses || true
 
       - name: Build Debug APK
-        run: |
-          GRADLE_DIR=$(find project -name "gradlew" | head -1 | xargs dirname)
-          echo "=== Building from: $GRADLE_DIR ==="
-          chmod +x "$GRADLE_DIR/gradlew"
-          cd "$GRADLE_DIR"
-          ./gradlew assembleDebug --stacktrace --no-daemon
+        working-directory: ScalpAI-AndroidApp/ScalpAI
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
 
-      - name: Find APK files
-        run: |
-          echo "=== APK files found ==="
-          find . -name "*.apk" -exec ls -lh {} \;
+      - name: List APK files
+        run: find . -name "*.apk" -exec ls -lh {} \;
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ScalpAI-Debug-APK
-          path: "**/*.apk"
+          path: ScalpAI-AndroidApp/ScalpAI/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30
