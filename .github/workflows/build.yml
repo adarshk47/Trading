@@ -18,24 +18,27 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Extract ScalpAI project
+      - name: Extract ScalpAI project from ZIP
         run: |
-          unzip ScalpAI-AndroidApp.zip -d project
-          echo "Extracted files:"
+          unzip -q ScalpAI-AndroidApp.zip -d project
+          echo "=== Extracted structure ==="
+          ls -la project/
           find project -name "gradlew" | head -5
+          find project -name "build.gradle" | head -5
 
-      - name: Make gradlew executable and build APK
+      - name: Build Debug APK
         run: |
           GRADLE_DIR=$(find project -name "gradlew" | head -1 | xargs dirname)
-          echo "Building from: $GRADLE_DIR"
+          echo "=== Building from: $GRADLE_DIR ==="
           chmod +x "$GRADLE_DIR/gradlew"
           cd "$GRADLE_DIR"
-          ./gradlew assembleDebug --stacktrace 2>&1
+          ./gradlew assembleDebug --stacktrace --no-daemon
 
-      - name: Find and list APK files
-        run: find . -name "*.apk" -exec ls -lh {} \;
+      - name: Find APK files
+        run: |
+          echo "=== APK files found ==="
+          find . -name "*.apk" -exec ls -lh {} \;
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
