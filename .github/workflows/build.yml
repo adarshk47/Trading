@@ -1,14 +1,46 @@
-name: Build APK
-on: push
+name: Build ScalpAI APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with: { java-version: '17', distribution: 'temurin' }
-      - run: cd ScalpAI && ./gradlew assembleDebug
-      - uses: actions/upload-artifact@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          name: ScalpAI-APK
-          path: ScalpAI/app/build/outputs/apk/debug/*.apk
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Extract ScalpAI project
+        run: |
+          unzip ScalpAI-AndroidApp.zip -d project
+          echo "Extracted files:"
+          find project -name "gradlew" | head -5
+
+      - name: Make gradlew executable and build APK
+        run: |
+          GRADLE_DIR=$(find project -name "gradlew" | head -1 | xargs dirname)
+          echo "Building from: $GRADLE_DIR"
+          chmod +x "$GRADLE_DIR/gradlew"
+          cd "$GRADLE_DIR"
+          ./gradlew assembleDebug --stacktrace 2>&1
+
+      - name: Find and list APK files
+        run: find . -name "*.apk" -exec ls -lh {} \;
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScalpAI-Debug-APK
+          path: "**/*.apk"
+          if-no-files-found: error
+          retention-days: 30
