@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="theme-color" content="#0d1117"/>
   <title>Market Dashboard</title>
   <style>
     :root {
@@ -13,342 +17,294 @@
       --muted: #8b949e;
       --green: #3fb950;
       --red: #f85149;
-      --yellow: #d29922;
       --accent: #58a6ff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 13px; min-height: 100vh;
+    }
 
+    /* ---- header ---- */
     header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 20px; border-bottom: 1px solid var(--border);
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
       background: var(--card); position: sticky; top: 0; z-index: 100;
     }
-    header h1 { font-size: 16px; font-weight: 600; color: var(--accent); letter-spacing: 0.5px; }
-    #last-updated { color: var(--muted); font-size: 11px; }
-    #status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-right: 6px; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    header h1 { font-size: 15px; font-weight: 700; color: var(--accent); }
+    #last-updated { color: var(--muted); font-size: 11px; display:flex; align-items:center; gap:4px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; flex-shrink:0; }
+    .dot.err { background: var(--red); animation:none; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-    .main { padding: 16px 20px; }
+    /* ---- layout ---- */
+    .main { padding: 12px 14px; max-width: 1600px; margin: 0 auto; }
 
-    /* ---- section headers ---- */
     .section-title {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
       letter-spacing: 1px; color: var(--muted);
-      margin: 18px 0 10px; padding-left: 4px; border-left: 3px solid var(--accent);
-      padding-left: 8px;
+      margin: 16px 0 8px; padding-left: 8px;
+      border-left: 3px solid var(--accent);
     }
 
-    /* ---- cards grid ---- */
-    .cards { display: flex; flex-wrap: wrap; gap: 10px; }
+    /* ---- index/futures cards ---- */
+    .cards { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
     .card {
-      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
-      padding: 12px 16px; min-width: 160px; flex: 1 1 160px; max-width: 220px;
-      transition: border-color 0.2s;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 11px 14px;
+      transition: border-color .15s;
     }
     .card:hover { border-color: var(--accent); }
-    .card .sym { font-weight: 600; font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card .ltp { font-size: 20px; font-weight: 700; margin: 4px 0; }
-    .card .meta { display: flex; gap: 8px; font-size: 11px; color: var(--muted); }
-    .card .chg { font-size: 12px; font-weight: 600; }
+    .card .sym { font-weight: 600; font-size: 11px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .card .ltp { font-size: 19px; font-weight: 700; margin: 3px 0 2px; line-height:1.1; }
+    .card .chg { font-size: 11px; font-weight: 600; }
+    .card .ohlc { margin-top: 6px; font-size: 10px; color: var(--muted); display:flex; gap:6px; flex-wrap:wrap; }
     .up   { color: var(--green); }
     .down { color: var(--red); }
     .flat { color: var(--muted); }
-    .card .ohlc { margin-top: 6px; font-size: 10px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
 
     /* ---- stocks table ---- */
-    .stocks-table { width: 100%; border-collapse: collapse; }
-    .stocks-table th {
-      text-align: left; padding: 7px 10px; font-size: 10px; text-transform: uppercase;
-      letter-spacing: 0.8px; color: var(--muted); border-bottom: 1px solid var(--border);
-      white-space: nowrap;
+    .tbl-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--border); border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left; padding: 8px 10px; font-size: 10px;
+      text-transform: uppercase; letter-spacing: .8px; color: var(--muted);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+      position: sticky; top: 0; background: var(--card);
     }
-    .stocks-table td { padding: 7px 10px; border-bottom: 1px solid #21262d; }
-    .stocks-table tr:hover td { background: #1c2128; }
-    .stocks-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-    .sym-badge { font-weight: 600; }
+    td { padding: 7px 10px; border-bottom: 1px solid #21262d; white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1c2128; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .sym-b { font-weight: 600; }
 
-    /* ---- TradingView global section ---- */
-    .tv-row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .tv-widget-wrap { flex: 1 1 300px; min-width: 280px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    /* ---- TradingView sections ---- */
+    .tv-ticker { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 10px; }
+    .tv-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); margin-bottom: 10px; }
+    .tv-cell { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); height: 210px; }
+    .tv-chart { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); height: 400px; margin-bottom: 10px; }
+    .tv-overview { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 24px; }
 
-    /* ---- mini chart area ---- */
-    .tv-ticker-wrap { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 12px; }
+    /* ---- skeleton ---- */
+    .sk { background: linear-gradient(90deg,#21262d 25%,#2d333b 50%,#21262d 75%); background-size:200% 100%; animation:sk 1.4s infinite; border-radius:4px; height:13px; margin:5px 0; }
+    @keyframes sk { 0%{background-position:200%} 100%{background-position:-200%} }
 
-    /* ---- loading ---- */
-    .skeleton { background: linear-gradient(90deg, #21262d 25%, #30363d 50%, #21262d 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; height: 14px; width: 80%; margin: 4px 0; }
-    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
-    @media(max-width:600px) { .card { max-width: 100%; } }
+    /* ---- mobile tweaks ---- */
+    @media (max-width: 480px) {
+      .main { padding: 10px 10px; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .card .ltp { font-size: 16px; }
+      .tv-chart { height: 300px; }
+      .tv-grid { grid-template-columns: 1fr 1fr; }
+      .tv-cell { height: 180px; }
+      th, td { padding: 6px 8px; font-size: 11px; }
+    }
+    @media (max-width: 360px) {
+      .cards { grid-template-columns: 1fr 1fr; gap:6px; }
+    }
   </style>
 </head>
 <body>
 
 <header>
   <h1>&#9650; Market Dashboard</h1>
-  <span id="last-updated"><span id="status-dot"></span>Connecting...</span>
+  <div id="last-updated"><span class="dot" id="dot"></span><span id="ts">Connecting…</span></div>
 </header>
 
 <div class="main">
 
-  <!-- ===== GLOBAL INDICES via TradingView ===== -->
-  <div class="section-title">Global Indices (TradingView Live)</div>
-
-  <div class="tv-ticker-wrap">
-    <!-- TradingView Ticker Tape -->
+  <!-- GLOBAL — TradingView ticker tape -->
+  <div class="section-title">Global (Live)</div>
+  <div class="tv-ticker">
     <div class="tradingview-widget-container">
       <div class="tradingview-widget-container__widget"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-      {
-        "symbols": [
-          {"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},
-          {"proName":"FOREXCOM:NSXUSD","title":"Nasdaq 100"},
-          {"description":"Dow Jones","proName":"FOREXCOM:DJI"},
-          {"description":"DAX","proName":"XETR:DAX"},
-          {"description":"Nikkei 225","proName":"TVC:NI225"},
-          {"description":"Hang Seng","proName":"TVC:HSI"},
-          {"description":"FTSE 100","proName":"SPREADEX:FTSE"},
-          {"description":"Gold","proName":"TVC:GOLD"},
-          {"description":"Crude Oil","proName":"NYMEX:CL1!"},
-          {"description":"USD/INR","proName":"FX_IDC:USDINR"}
-        ],
-        "showSymbolLogo": true,
-        "isTransparent": true,
-        "displayMode": "adaptive",
-        "colorTheme": "dark",
-        "locale": "en"
-      }
+      <script src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {"symbols":[
+        {"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},
+        {"proName":"FOREXCOM:NSXUSD","title":"Nasdaq"},
+        {"description":"Dow Jones","proName":"FOREXCOM:DJI"},
+        {"description":"DAX","proName":"XETR:DAX"},
+        {"description":"Nikkei","proName":"TVC:NI225"},
+        {"description":"Hang Seng","proName":"TVC:HSI"},
+        {"description":"FTSE","proName":"SPREADEX:FTSE"},
+        {"description":"Gold","proName":"TVC:GOLD"},
+        {"description":"Crude","proName":"NYMEX:CL1!"},
+        {"description":"USD/INR","proName":"FX_IDC:USDINR"}
+      ],"showSymbolLogo":true,"isTransparent":true,"displayMode":"adaptive","colorTheme":"dark","locale":"en"}
       </script>
     </div>
   </div>
 
-  <div class="tv-row">
-    <!-- S&P 500 mini chart -->
-    <div class="tv-widget-wrap">
-      <div class="tradingview-widget-container" style="height:220px">
+  <div class="tv-grid">
+    <div class="tv-cell">
+      <div class="tradingview-widget-container" style="height:100%">
         <div class="tradingview-widget-container__widget" style="height:100%"></div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-        {"symbol":"FOREXCOM:SPXUSD","width":"100%","height":"220","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true,"autosize":false,"largeChartUrl":""}
+        <script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+        {"symbol":"FOREXCOM:SPXUSD","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}
         </script>
       </div>
     </div>
-    <!-- Nasdaq mini chart -->
-    <div class="tv-widget-wrap">
-      <div class="tradingview-widget-container" style="height:220px">
+    <div class="tv-cell">
+      <div class="tradingview-widget-container" style="height:100%">
         <div class="tradingview-widget-container__widget" style="height:100%"></div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-        {"symbol":"FOREXCOM:NSXUSD","width":"100%","height":"220","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true,"autosize":false}
+        <script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+        {"symbol":"FOREXCOM:NSXUSD","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}
         </script>
       </div>
     </div>
-    <!-- DAX mini chart -->
-    <div class="tv-widget-wrap">
-      <div class="tradingview-widget-container" style="height:220px">
+    <div class="tv-cell">
+      <div class="tradingview-widget-container" style="height:100%">
         <div class="tradingview-widget-container__widget" style="height:100%"></div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-        {"symbol":"XETR:DAX","width":"100%","height":"220","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true,"autosize":false}
+        <script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+        {"symbol":"XETR:DAX","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}
         </script>
       </div>
     </div>
-    <!-- Gold -->
-    <div class="tv-widget-wrap">
-      <div class="tradingview-widget-container" style="height:220px">
+    <div class="tv-cell">
+      <div class="tradingview-widget-container" style="height:100%">
         <div class="tradingview-widget-container__widget" style="height:100%"></div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-        {"symbol":"TVC:GOLD","width":"100%","height":"220","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true,"autosize":false}
+        <script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+        {"symbol":"TVC:GOLD","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}
         </script>
       </div>
     </div>
   </div>
 
-  <!-- ===== INDIAN INDICES via Angel One ===== -->
-  <div class="section-title">Indian Indices (Angel One Live)</div>
+  <!-- INDIAN INDICES -->
+  <div class="section-title">Indian Indices — Angel One (5s)</div>
   <div class="cards" id="indices-cards">
-    <div class="card"><div class="skeleton"></div><div class="skeleton" style="width:60%"></div></div>
-    <div class="card"><div class="skeleton"></div><div class="skeleton" style="width:60%"></div></div>
-    <div class="card"><div class="skeleton"></div><div class="skeleton" style="width:60%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
   </div>
 
-  <!-- ===== FUTURES ===== -->
-  <div class="section-title">Nifty Futures (Angel One Live)</div>
+  <!-- FUTURES -->
+  <div class="section-title">Nifty Futures — Angel One (5s)</div>
   <div class="cards" id="futures-cards">
-    <div class="card"><div class="skeleton"></div><div class="skeleton" style="width:60%"></div></div>
-    <div class="card"><div class="skeleton"></div><div class="skeleton" style="width:60%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
   </div>
 
-  <!-- ===== NIFTY CHART on TradingView ===== -->
+  <!-- NIFTY CHART -->
   <div class="section-title">Nifty 50 Chart (TradingView)</div>
-  <div style="border-radius:8px; overflow:hidden; border:1px solid var(--border); height:420px; margin-bottom:18px;">
+  <div class="tv-chart">
     <div class="tradingview-widget-container" style="height:100%">
       <div class="tradingview-widget-container__widget" style="height:100%"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-      {
-        "autosize": true,
-        "symbol": "NSE:NIFTY",
-        "interval": "5",
-        "timezone": "Asia/Kolkata",
-        "theme": "dark",
-        "style": "1",
-        "locale": "en",
-        "enable_publishing": false,
-        "hide_top_toolbar": false,
-        "hide_legend": false,
-        "save_image": false,
-        "calendar": false,
-        "hide_volume": false
-      }
+      <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+      {"autosize":true,"symbol":"NSE:NIFTY","interval":"5","timezone":"Asia/Kolkata","theme":"dark","style":"1","locale":"en","hide_top_toolbar":false,"hide_legend":false,"save_image":false,"calendar":false}
       </script>
     </div>
   </div>
 
-  <!-- ===== INDIAN STOCKS TABLE ===== -->
-  <div class="section-title">Indian Stocks (Angel One Live)</div>
-  <div style="overflow-x:auto; background:var(--card); border:1px solid var(--border); border-radius:8px;">
-    <table class="stocks-table">
+  <!-- STOCKS TABLE -->
+  <div class="section-title">Indian Stocks — Angel One (5s)</div>
+  <div class="tbl-wrap">
+    <table>
       <thead>
         <tr>
           <th>Symbol</th>
           <th class="num">LTP</th>
-          <th class="num">Change</th>
+          <th class="num">Chg</th>
           <th class="num">% Chg</th>
           <th class="num">Open</th>
           <th class="num">High</th>
           <th class="num">Low</th>
-          <th class="num">Prev Close</th>
-          <th class="num">Volume</th>
+          <th class="num">Prev</th>
+          <th class="num">Vol</th>
         </tr>
       </thead>
       <tbody id="stocks-tbody">
-        <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">Loading...</td></tr>
+        <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">Loading…</td></tr>
       </tbody>
     </table>
   </div>
 
-  <!-- ===== MARKET OVERVIEW (TradingView) ===== -->
+  <!-- MARKET OVERVIEW -->
   <div class="section-title">Market Overview (TradingView)</div>
-  <div style="border-radius:8px; overflow:hidden; border:1px solid var(--border); margin-bottom:24px;">
+  <div class="tv-overview">
     <div class="tradingview-widget-container">
       <div class="tradingview-widget-container__widget"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-      {
-        "colorTheme": "dark",
-        "dateRange": "1D",
-        "showChart": true,
-        "locale": "en",
-        "largeChartUrl": "",
-        "isTransparent": true,
-        "showSymbolLogo": true,
-        "showFloatingTooltip": true,
-        "width": "100%",
-        "height": "500",
-        "tabs": [
-          {
-            "title": "Indices",
-            "symbols": [
-              {"s":"NSE:NIFTY","d":"Nifty 50"},
-              {"s":"BSE:SENSEX","d":"Sensex"},
-              {"s":"NSE:BANKNIFTY","d":"Bank Nifty"},
-              {"s":"FOREXCOM:SPXUSD","d":"S&P 500"},
-              {"s":"FOREXCOM:NSXUSD","d":"Nasdaq 100"},
-              {"s":"TVC:NI225","d":"Nikkei 225"},
-              {"s":"XETR:DAX","d":"DAX"},
-              {"s":"TVC:HSI","d":"Hang Seng"}
-            ],
-            "originalTitle": "Indices"
-          },
-          {
-            "title": "Futures",
-            "symbols": [
-              {"s":"NSE:NIFTY1!","d":"Nifty Fut"},
-              {"s":"NSE:BANKNIFTY1!","d":"BankNifty Fut"},
-              {"s":"NYMEX:CL1!","d":"Crude Oil"},
-              {"s":"TVC:GOLD","d":"Gold"},
-              {"s":"CBOT:ZW1!","d":"Wheat"}
-            ],
-            "originalTitle": "Futures"
-          },
-          {
-            "title": "Indian Stocks",
-            "symbols": [
-              {"s":"NSE:RELIANCE"},{"s":"NSE:TCS"},{"s":"NSE:INFY"},
-              {"s":"NSE:HDFCBANK"},{"s":"NSE:ICICIBANK"},{"s":"NSE:SBIN"},
-              {"s":"NSE:AXISBANK"},{"s":"NSE:WIPRO"},{"s":"NSE:LT"},
-              {"s":"NSE:BAJFINANCE"}
-            ],
-            "originalTitle": "Indian Stocks"
-          }
-        ]
-      }
+      <script src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+      {"colorTheme":"dark","dateRange":"1D","showChart":true,"locale":"en","isTransparent":true,"showSymbolLogo":true,"width":"100%","height":"500",
+       "tabs":[
+         {"title":"Indices","symbols":[
+           {"s":"NSE:NIFTY","d":"Nifty 50"},{"s":"BSE:SENSEX","d":"Sensex"},
+           {"s":"NSE:BANKNIFTY","d":"Bank Nifty"},
+           {"s":"FOREXCOM:SPXUSD","d":"S&P 500"},{"s":"FOREXCOM:NSXUSD","d":"Nasdaq"},
+           {"s":"TVC:NI225","d":"Nikkei"},{"s":"XETR:DAX","d":"DAX"},{"s":"TVC:HSI","d":"HSI"}
+         ],"originalTitle":"Indices"},
+         {"title":"Futures","symbols":[
+           {"s":"NSE:NIFTY1!","d":"Nifty Fut"},{"s":"NSE:BANKNIFTY1!","d":"BNF Fut"},
+           {"s":"NYMEX:CL1!","d":"Crude"},{"s":"TVC:GOLD","d":"Gold"},{"s":"CBOT:ZW1!","d":"Wheat"}
+         ],"originalTitle":"Futures"},
+         {"title":"Stocks","symbols":[
+           {"s":"NSE:RELIANCE"},{"s":"NSE:TCS"},{"s":"NSE:INFY"},
+           {"s":"NSE:HDFCBANK"},{"s":"NSE:ICICIBANK"},{"s":"NSE:SBIN"},
+           {"s":"NSE:AXISBANK"},{"s":"NSE:WIPRO"},{"s":"NSE:LT"},{"s":"NSE:BAJFINANCE"}
+         ],"originalTitle":"Stocks"}
+       ]}
       </script>
     </div>
   </div>
 
-</div><!-- /main -->
+</div>
 
 <script>
-const fmt = (n) => typeof n === 'number' ? n.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) : '--';
-const fmtVol = (v) => v >= 1e7 ? (v/1e7).toFixed(2)+'Cr' : v >= 1e5 ? (v/1e5).toFixed(2)+'L' : v?.toLocaleString() ?? '--';
-const clsDir = (v) => v > 0 ? 'up' : v < 0 ? 'down' : 'flat';
-const arrow = (v) => v > 0 ? '▲' : v < 0 ? '▼' : '─';
+const I  = id => document.getElementById(id);
+const fmt = n => typeof n==='number' ? n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) : '--';
+const fmtV = v => v>=1e7?(v/1e7).toFixed(1)+'Cr':v>=1e5?(v/1e5).toFixed(1)+'L':v?.toLocaleString()??'--';
+const cls = v => v>0?'up':v<0?'down':'flat';
+const arr = v => v>0?'▲':v<0?'▼':'─';
 
-function buildCard(q) {
-  const dir = clsDir(q.pct);
-  return `
-    <div class="card">
-      <div class="sym">${q.symbol}</div>
-      <div class="ltp ${dir}">${fmt(q.ltp)}</div>
-      <div class="chg ${dir}">${arrow(q.pct)} ${fmt(q.change)} (${q.pct?.toFixed(2) ?? '--'}%)</div>
-      <div class="ohlc">
-        <span>O: ${fmt(q.open)}</span>
-        <span>H: ${fmt(q.high)}</span>
-        <span>L: ${fmt(q.low)}</span>
-        <span>C: ${fmt(q.close)}</span>
-      </div>
-    </div>`;
+function card(q){
+  const d=cls(q.pct);
+  return `<div class="card">
+    <div class="sym">${q.symbol}</div>
+    <div class="ltp ${d}">${fmt(q.ltp)}</div>
+    <div class="chg ${d}">${arr(q.pct)} ${fmt(q.change)} (${q.pct?.toFixed(2)??'--'}%)</div>
+    <div class="ohlc"><span>O:${fmt(q.open)}</span><span>H:${fmt(q.high)}</span><span>L:${fmt(q.low)}</span><span>C:${fmt(q.close)}</span></div>
+  </div>`;
 }
 
-function buildStockRow(q) {
-  const dir = clsDir(q.pct);
+function row(q){
+  const d=cls(q.pct);
   return `<tr>
-    <td><span class="sym-badge">${q.symbol}</span></td>
+    <td><span class="sym-b">${q.symbol}</span></td>
     <td class="num">${fmt(q.ltp)}</td>
-    <td class="num ${dir}">${arrow(q.pct)} ${fmt(q.change)}</td>
-    <td class="num ${dir}">${q.pct?.toFixed(2) ?? '--'}%</td>
+    <td class="num ${d}">${arr(q.pct)} ${fmt(q.change)}</td>
+    <td class="num ${d}">${q.pct?.toFixed(2)??'--'}%</td>
     <td class="num">${fmt(q.open)}</td>
     <td class="num">${fmt(q.high)}</td>
     <td class="num">${fmt(q.low)}</td>
     <td class="num">${fmt(q.close)}</td>
-    <td class="num">${fmtVol(q.volume)}</td>
+    <td class="num">${fmtV(q.volume)}</td>
   </tr>`;
 }
 
-async function refresh() {
+async function refresh(){
   try {
-    const res = await fetch('/api/market');
-    if (!res.ok) throw new Error(res.status);
-    const d = await res.json();
+    const r = await fetch('/api/market');
+    if(!r.ok) throw new Error(r.status);
+    const d = await r.json();
 
-    document.getElementById('indices-cards').innerHTML =
-      d.indices.length ? d.indices.map(buildCard).join('') : '<p style="color:var(--muted);padding:10px">No data</p>';
+    I('indices-cards').innerHTML = d.indices.length ? d.indices.map(card).join('') : '<p style="color:var(--muted);padding:10px">No data</p>';
+    I('futures-cards').innerHTML = d.futures.length ? d.futures.map(card).join('') : '<p style="color:var(--muted);padding:10px">No data</p>';
+    I('stocks-tbody').innerHTML  = d.stocks.length  ? d.stocks.map(row).join('')   : '<tr><td colspan="9" style="text-align:center;color:var(--muted)">No data</td></tr>';
 
-    document.getElementById('futures-cards').innerHTML =
-      d.futures.length ? d.futures.map(buildCard).join('') : '<p style="color:var(--muted);padding:10px">No data</p>';
-
-    document.getElementById('stocks-tbody').innerHTML =
-      d.stocks.length ? d.stocks.map(buildStockRow).join('') : '<tr><td colspan="9" style="text-align:center;color:var(--muted)">No data</td></tr>';
-
-    const now = new Date().toLocaleTimeString('en-IN');
-    document.getElementById('last-updated').innerHTML =
-      `<span id="status-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s infinite"></span>Live · ${now}`;
+    I('dot').className = 'dot';
+    I('ts').textContent = 'Live · ' + new Date().toLocaleTimeString('en-IN');
   } catch(e) {
-    document.getElementById('last-updated').innerHTML =
-      `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:6px"></span>Error · ${new Date().toLocaleTimeString('en-IN')}`;
-    console.error('Refresh error:', e);
+    I('dot').className = 'dot err';
+    I('ts').textContent = 'Error · ' + new Date().toLocaleTimeString('en-IN');
   }
 }
 
 refresh();
-setInterval(refresh, 5000); // refresh every 5 seconds
+setInterval(refresh, 5000);
 </script>
 </body>
 </html>

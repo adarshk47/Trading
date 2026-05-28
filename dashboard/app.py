@@ -8,6 +8,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 app = Flask(__name__)
 
+# start background refresh once (works with gunicorn --preload or direct run)
+start_background_refresh(interval=5)
+
 # token sets for categorization
 INDEX_TOKENS   = {tok for _, tok, _ in INDICES}
 FUTURE_TOKENS  = {tok for _, tok, _ in FUTURES}
@@ -46,5 +49,4 @@ def market_api():
 
 
 if __name__ == "__main__":
-    start_background_refresh(interval=5)
     app.run(host="0.0.0.0", port=5000, debug=False)
