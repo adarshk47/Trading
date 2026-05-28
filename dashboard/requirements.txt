@@ -1,0 +1,7 @@
+flask>=3.0.0
+smartapi-python>=1.5.0
+pyotp>=2.8.0
+logzero>=1.7.0
+websocket-client>=1.6.0
+requests>=2.31.0
+python-dotenv>=1.0.0
