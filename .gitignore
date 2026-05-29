@@ -1,0 +1,6 @@
+dashboard/.env
+dashboard/__pycache__/
+dashboard/logs/
+**/__pycache__/
+*.pyc
+*.pyo
