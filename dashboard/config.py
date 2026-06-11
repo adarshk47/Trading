@@ -30,7 +30,7 @@ INDIAN_WATCHLIST = [
 INDICES = [
     ("NIFTY 50",     "99926000", "NSE"),
     ("BANK NIFTY",   "99926009", "NSE"),
-    ("SENSEX",       "99919000", "BSE"),
+    ("SENSEX",       "SENSEX",   "BSE"),   # fetched from NSE allIndices API
     ("NIFTY IT",     "99926036", "NSE"),
     ("NIFTY MIDCAP", "99926015", "NSE"),
 ]
