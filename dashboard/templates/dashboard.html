@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="theme-color" content="#0d1117"/>
+  <title>Market Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#0d1117; --card:#161b22; --border:#30363d;
+      --text:#e6edf3; --muted:#8b949e;
+      --green:#3fb950; --red:#f85149; --accent:#58a6ff;
+      --yellow:#e3b341; --orange:#d18616;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-text-size-adjust:100%}
+    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px;min-height:100vh}
+
+    /* HEADER */
+    header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:200}
+    header h1{font-size:15px;font-weight:700;color:var(--accent)}
+    #hdr-right{display:flex;align-items:center;gap:12px}
+    #last-upd{color:var(--muted);font-size:11px;display:flex;align-items:center;gap:4px}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+    .dot.err{background:var(--red);animation:none}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+    /* TABS */
+    .tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:41px;z-index:190}
+    .tab-btn{padding:10px 18px;font-size:12px;font-weight:600;color:var(--muted);border:none;background:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .tab-btn:hover{color:var(--text)}
+    .tab-pane{display:none;padding:14px 16px;max-width:1600px;margin:0 auto}
+    .tab-pane.active{display:block}
+
+    /* SECTION TITLES */
+    .stitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:16px 0 8px;padding-left:8px;border-left:3px solid var(--accent)}
+
+    /* CARDS GRID */
+    .cards{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;transition:border-color .15s}
+    .card:hover{border-color:var(--accent)}
+    .card .sym{font-weight:600;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .card .ltp{font-size:19px;font-weight:700;margin:3px 0 2px;line-height:1.1}
+    .card .chg{font-size:11px;font-weight:600}
+    .card .ohlc{margin-top:6px;font-size:10px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap}
+    .up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--muted)}
+
+    /* OI DIRECTION BAR */
+    .oi-bar-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:10px}
+    .oi-bar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .oi-bar-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+    .oi-signal{font-size:12px;font-weight:700;padding:2px 10px;border-radius:12px}
+    .oi-signal.bullish{background:#1a3d2b;color:var(--green)}
+    .oi-signal.bearish{background:#3d1a1a;color:var(--red)}
+    .oi-signal.neutral{background:#2a2a2a;color:var(--muted)}
+    .oi-bar-track{height:12px;background:#21262d;border-radius:6px;overflow:hidden;display:flex}
+    .oi-bar-pe{height:100%;background:var(--green);transition:width .4s}
+    .oi-bar-ce{height:100%;background:var(--red);transition:width .4s}
+    .oi-bar-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--muted)}
+    .oi-stats{display:flex;gap:16px;margin-top:8px;font-size:11px}
+    .oi-stat{display:flex;flex-direction:column;gap:2px}
+    .oi-stat span:first-child{color:var(--muted);font-size:10px}
+    .oi-stat span:last-child{font-weight:600}
+
+    /* STOCKS TABLE */
+    .tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--border);border-radius:10px}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;padding:8px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--card)}
+    td{padding:7px 10px;border-bottom:1px solid #21262d;white-space:nowrap}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:#1c2128}
+    .num{text-align:right;font-variant-numeric:tabular-nums}
+    .sym-b{font-weight:600}
+
+    /* OPTION CHAIN TABLE */
+    .oc-info{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px}
+    .oc-pill{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px}
+    .oc-pill b{color:var(--accent)}
+    .oc-tbl th{background:#0d1117}
+    .oc-tbl .atm-row td{background:#1f2937;font-weight:700}
+    .oc-tbl .atm-row td.strike-col{background:#1d3557;color:var(--accent);text-align:center}
+    .oc-tbl .strike-col{text-align:center;font-weight:600;color:var(--yellow)}
+    .oc-tbl .ce-side{background:#0f1c0f}
+    .oc-tbl .pe-side{background:#1c0f0f}
+    .oi-bar-inline{height:4px;border-radius:2px;margin-top:3px}
+
+    /* TV WIDGETS */
+    .tv-ticker{border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:10px}
+    .tv-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-bottom:10px}
+    .tv-cell{border-radius:10px;overflow:hidden;border:1px solid var(--border);height:210px}
+    .tv-chart{border-radius:10px;overflow:hidden;border:1px solid var(--border);height:400px;margin-bottom:10px}
+    .tv-overview{border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px}
+
+    /* HISTORY */
+    .interval-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+    .ibtn{padding:5px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s}
+    .ibtn.active,.ibtn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .sym-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+    .sbtn{padding:5px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s}
+    .sbtn.active,.sbtn:hover{background:#30363d;color:var(--text)}
+    .chart-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px}
+    .chart-box canvas{max-height:280px}
+
+    /* SKELETON */
+    .sk{background:linear-gradient(90deg,#21262d 25%,#2d333b 50%,#21262d 75%);background-size:200% 100%;animation:sk 1.4s infinite;border-radius:4px;height:13px;margin:5px 0}
+    @keyframes sk{0%{background-position:200%}100%{background-position:-200%}}
+
+    /* MOBILE */
+    @media(max-width:480px){
+      .tab-pane{padding:10px 10px}
+      .cards{grid-template-columns:repeat(2,1fr)}
+      .card .ltp{font-size:16px}
+      .tv-chart{height:300px}
+      .tv-grid{grid-template-columns:1fr 1fr}
+      .tv-cell{height:180px}
+      th,td{padding:6px 8px;font-size:11px}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>&#9650; Market Dashboard</h1>
+  <div id="hdr-right">
+    <div id="last-upd"><span class="dot" id="dot"></span><span id="ts">Connecting…</span></div>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('overview',this)">Overview</button>
+  <button class="tab-btn" onclick="switchTab('nifty_oc',this)">Nifty Options</button>
+  <button class="tab-btn" onclick="switchTab('sensex',this)">Sensex</button>
+  <button class="tab-btn" onclick="switchTab('history',this)">History</button>
+</div>
+
+<!-- ============================================================ TAB: OVERVIEW -->
+<div class="tab-pane active" id="tab-overview">
+
+  <div class="stitle">Global (TradingView Live)</div>
+  <div class="tv-ticker">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {"symbols":[
+        {"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},
+        {"proName":"FOREXCOM:NSXUSD","title":"Nasdaq"},
+        {"description":"Dow Jones","proName":"FOREXCOM:DJI"},
+        {"description":"DAX","proName":"XETR:DAX"},
+        {"description":"Nikkei","proName":"TVC:NI225"},
+        {"description":"Hang Seng","proName":"TVC:HSI"},
+        {"description":"FTSE","proName":"SPREADEX:FTSE"},
+        {"description":"Gold","proName":"TVC:GOLD"},
+        {"description":"Crude","proName":"NYMEX:CL1!"},
+        {"description":"USD/INR","proName":"FX_IDC:USDINR"}
+      ],"showSymbolLogo":true,"isTransparent":true,"displayMode":"adaptive","colorTheme":"dark","locale":"en"}
+      </script>
+    </div>
+  </div>
+
+  <div class="tv-grid">
+    <div class="tv-cell"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol":"FOREXCOM:SPXUSD","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}</script></div></div>
+    <div class="tv-cell"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol":"FOREXCOM:NSXUSD","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}</script></div></div>
+    <div class="tv-cell"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol":"XETR:DAX","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}</script></div></div>
+    <div class="tv-cell"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol":"TVC:GOLD","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}</script></div></div>
+  </div>
+
+  <div class="stitle">Indian Indices — Angel One (5s)</div>
+  <div class="cards" id="indices-cards">
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+  </div>
+
+  <!-- OI DIRECTION -->
+  <div class="stitle">Nifty OI Direction — Last 15 Min</div>
+  <div class="oi-bar-wrap" id="oi-dir-wrap">
+    <div class="oi-bar-header">
+      <span class="oi-bar-title">Overall OI Pressure</span>
+      <span class="oi-signal neutral" id="oi-signal">–</span>
+    </div>
+    <div class="oi-bar-track">
+      <div class="oi-bar-pe" id="oi-bar-pe" style="width:50%"></div>
+      <div class="oi-bar-ce" id="oi-bar-ce" style="width:50%"></div>
+    </div>
+    <div class="oi-bar-labels"><span>&#9650; PE (Bullish)</span><span>CE (Bearish) &#9660;</span></div>
+    <div class="oi-stats">
+      <div class="oi-stat"><span>CE OI Change</span><span id="oi-ce-chg">–</span></div>
+      <div class="oi-stat"><span>PE OI Change</span><span id="oi-pe-chg">–</span></div>
+      <div class="oi-stat"><span>Net Push</span><span id="oi-net">–</span></div>
+    </div>
+  </div>
+
+  <div class="stitle">Nifty Futures — Angel One (5s)</div>
+  <div class="cards" id="futures-cards">
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+  </div>
+
+  <div class="stitle">Nifty 50 Chart (TradingView)</div>
+  <div class="tv-chart"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>{"autosize":true,"symbol":"NSE:NIFTY","interval":"5","timezone":"Asia/Kolkata","theme":"dark","style":"1","locale":"en","hide_top_toolbar":false,"save_image":false,"calendar":false}</script></div></div>
+
+  <div class="stitle">Indian Stocks — Angel One (5s)</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Symbol</th><th class="num">LTP</th><th class="num">Chg</th><th class="num">%Chg</th><th class="num">Open</th><th class="num">High</th><th class="num">Low</th><th class="num">Prev</th><th class="num">Vol</th></tr></thead>
+      <tbody id="stocks-tbody"><tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="stitle">Market Overview (TradingView)</div>
+  <div class="tv-overview">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+      {"colorTheme":"dark","dateRange":"1D","showChart":true,"locale":"en","isTransparent":true,"showSymbolLogo":true,"width":"100%","height":"500",
+       "tabs":[
+         {"title":"Indices","symbols":[{"s":"NSE:NIFTY","d":"Nifty 50"},{"s":"BSE:SENSEX","d":"Sensex"},{"s":"NSE:BANKNIFTY","d":"Bank Nifty"},{"s":"FOREXCOM:SPXUSD","d":"S&P 500"},{"s":"FOREXCOM:NSXUSD","d":"Nasdaq"},{"s":"TVC:NI225","d":"Nikkei"},{"s":"XETR:DAX","d":"DAX"},{"s":"TVC:HSI","d":"HSI"}],"originalTitle":"Indices"},
+         {"title":"Futures","symbols":[{"s":"NSE:NIFTY1!","d":"Nifty Fut"},{"s":"NSE:BANKNIFTY1!","d":"BNF Fut"},{"s":"NYMEX:CL1!","d":"Crude"},{"s":"TVC:GOLD","d":"Gold"}],"originalTitle":"Futures"},
+         {"title":"Stocks","symbols":[{"s":"NSE:RELIANCE"},{"s":"NSE:TCS"},{"s":"NSE:INFY"},{"s":"NSE:HDFCBANK"},{"s":"NSE:ICICIBANK"},{"s":"NSE:SBIN"},{"s":"NSE:AXISBANK"},{"s":"NSE:WIPRO"},{"s":"NSE:LT"},{"s":"NSE:BAJFINANCE"}],"originalTitle":"Stocks"}
+       ]}
+      </script>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ TAB: NIFTY OPTIONS -->
+<div class="tab-pane" id="tab-nifty_oc">
+
+  <div class="stitle">Nifty Option Chain — NSE Live (±5 strikes)</div>
+
+  <div class="oi-bar-wrap" id="oc-oi-dir-wrap">
+    <div class="oi-bar-header">
+      <span class="oi-bar-title">Nifty OI Pressure (15 min)</span>
+      <span class="oi-signal neutral" id="oc-oi-signal">–</span>
+    </div>
+    <div class="oi-bar-track">
+      <div class="oi-bar-pe" id="oc-bar-pe" style="width:50%"></div>
+      <div class="oi-bar-ce" id="oc-bar-ce" style="width:50%"></div>
+    </div>
+    <div class="oi-bar-labels"><span>&#9650; PE (Bullish)</span><span>CE (Bearish) &#9660;</span></div>
+    <div class="oi-stats">
+      <div class="oi-stat"><span>PCR</span><span id="oc-pcr">–</span></div>
+      <div class="oi-stat"><span>ATM</span><span id="oc-atm">–</span></div>
+      <div class="oi-stat"><span>Max Pain</span><span id="oc-maxpain">–</span></div>
+      <div class="oi-stat"><span>Expiry</span><span id="oc-expiry">–</span></div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="oc-tbl">
+      <thead>
+        <tr>
+          <th class="num">CE OI</th><th class="num">Chg OI</th><th class="num">CE Vol</th>
+          <th class="num">CE IV</th><th class="num">CE LTP</th>
+          <th class="num" style="background:#1d3557;color:var(--accent)">STRIKE</th>
+          <th class="num">PE LTP</th><th class="num">PE IV</th>
+          <th class="num">PE Vol</th><th class="num">Chg OI</th><th class="num">PE OI</th>
+        </tr>
+      </thead>
+      <tbody id="oc-tbody"><tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted)">Loading option chain…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================ TAB: SENSEX -->
+<div class="tab-pane" id="tab-sensex">
+
+  <div class="stitle">Sensex — Live Data</div>
+  <div class="cards" id="sensex-card">
+    <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+  </div>
+
+  <div class="stitle">Sensex Chart (TradingView)</div>
+  <div class="tv-chart"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>{"autosize":true,"symbol":"BSE:SENSEX","interval":"5","timezone":"Asia/Kolkata","theme":"dark","style":"1","locale":"en","hide_top_toolbar":false,"save_image":false,"calendar":false}</script></div></div>
+
+  <div class="tv-grid">
+    <div class="tv-cell"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol":"BSE:SENSEX","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}</script></div></div>
+    <div class="tv-cell"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol":"NSE:NIFTY","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}</script></div></div>
+    <div class="tv-cell"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol":"NSE:BANKNIFTY","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}</script></div></div>
+    <div class="tv-cell"><div class="tradingview-widget-container" style="height:100%"><div class="tradingview-widget-container__widget" style="height:100%"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol":"FX_IDC:USDINR","width":"100%","height":"210","locale":"en","dateRange":"1D","colorTheme":"dark","isTransparent":true}</script></div></div>
+  </div>
+
+  <div class="stitle">Sensex Market Overview (TradingView)</div>
+  <div class="tv-overview">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+      {"colorTheme":"dark","dateRange":"1D","showChart":true,"locale":"en","isTransparent":true,"showSymbolLogo":true,"width":"100%","height":"500",
+       "tabs":[
+         {"title":"BSE","symbols":[{"s":"BSE:SENSEX","d":"Sensex"},{"s":"BSE:BANKEX","d":"Bankex"},{"s":"BSE:BSEPOWER","d":"BSE Power"},{"s":"BSE:BSEIT","d":"BSE IT"},{"s":"BSE:BSEFMCG","d":"BSE FMCG"},{"s":"BSE:BSEAUTO","d":"BSE Auto"}],"originalTitle":"BSE"},
+         {"title":"NSE","symbols":[{"s":"NSE:NIFTY","d":"Nifty 50"},{"s":"NSE:BANKNIFTY","d":"Bank Nifty"},{"s":"NSE:NIFTYIT","d":"Nifty IT"},{"s":"NSE:CNXAUTO","d":"Nifty Auto"}],"originalTitle":"NSE"}
+       ]}
+      </script>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ TAB: HISTORY -->
+<div class="tab-pane" id="tab-history">
+
+  <div class="stitle">Symbol</div>
+  <div class="sym-btns" id="sym-btns">
+    <button class="sbtn active" onclick="selectSym('NIFTY 50',this)">NIFTY 50</button>
+    <button class="sbtn" onclick="selectSym('BANK NIFTY',this)">BANK NIFTY</button>
+    <button class="sbtn" onclick="selectSym('SENSEX',this)">SENSEX</button>
+    <button class="sbtn" onclick="selectSym('RELIANCE',this)">RELIANCE</button>
+    <button class="sbtn" onclick="selectSym('TCS',this)">TCS</button>
+    <button class="sbtn" onclick="selectSym('INFY',this)">INFY</button>
+    <button class="sbtn" onclick="selectSym('HDFCBANK',this)">HDFCBANK</button>
+  </div>
+
+  <div class="stitle">Timeframe</div>
+  <div class="interval-btns">
+    <button class="ibtn" onclick="selectInterval('1m',this)">1m</button>
+    <button class="ibtn active" onclick="selectInterval('5m',this)">5m</button>
+    <button class="ibtn" onclick="selectInterval('10m',this)">10m</button>
+    <button class="ibtn" onclick="selectInterval('15m',this)">15m</button>
+    <button class="ibtn" onclick="selectInterval('30m',this)">30m</button>
+    <button class="ibtn" onclick="selectInterval('1h',this)">1h</button>
+    <button class="ibtn" onclick="selectInterval('2h',this)">2h</button>
+    <button class="ibtn" onclick="selectInterval('3h',this)">3h</button>
+    <button class="ibtn" onclick="selectInterval('4h',this)">4h</button>
+    <button class="ibtn" onclick="selectInterval('5h',this)">5h</button>
+    <button class="ibtn" onclick="selectInterval('6h',this)">6h</button>
+  </div>
+
+  <div class="chart-box">
+    <canvas id="priceChart"></canvas>
+  </div>
+  <div class="chart-box">
+    <canvas id="volumeChart"></canvas>
+  </div>
+  <p id="hist-status" style="color:var(--muted);font-size:11px;text-align:center;margin-top:4px">Data accumulates as the server runs. More data available after some time.</p>
+</div>
+
+
+<script>
+// =========================================================
+// Utils
+// =========================================================
+const $  = id => document.getElementById(id);
+const fmt  = n => typeof n==='number' ? n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) : '--';
+const fmtK = n => n>=1e7?(n/1e7).toFixed(1)+'Cr':n>=1e5?(n/1e5).toFixed(1)+'L':n?.toLocaleString()??'--';
+const cls  = v => v>0?'up':v<0?'down':'flat';
+const arr  = v => v>0?'▲':v<0?'▼':'─';
+
+// =========================================================
+// Tabs
+// =========================================================
+function switchTab(id, btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  $('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='nifty_oc') loadOptionChain();
+  if(id==='history')  loadHistory();
+}
+
+// =========================================================
+// Card & Row builders
+// =========================================================
+function buildCard(q){
+  const d=cls(q.pct);
+  return `<div class="card"><div class="sym">${q.symbol}</div><div class="ltp ${d}">${fmt(q.ltp)}</div><div class="chg ${d}">${arr(q.pct)} ${fmt(q.change)} (${(q.pct??0).toFixed(2)}%)</div><div class="ohlc"><span>O:${fmt(q.open)}</span><span>H:${fmt(q.high)}</span><span>L:${fmt(q.low)}</span><span>C:${fmt(q.close)}</span></div></div>`;
+}
+function buildRow(q){
+  const d=cls(q.pct);
+  return `<tr><td><span class="sym-b">${q.symbol}</span></td><td class="num">${fmt(q.ltp)}</td><td class="num ${d}">${arr(q.pct)} ${fmt(q.change)}</td><td class="num ${d}">${(q.pct??0).toFixed(2)}%</td><td class="num">${fmt(q.open)}</td><td class="num">${fmt(q.high)}</td><td class="num">${fmt(q.low)}</td><td class="num">${fmt(q.close)}</td><td class="num">${fmtK(q.volume)}</td></tr>`;
+}
+
+// =========================================================
+// OI Direction bar render
+// =========================================================
+function renderOiBar(dir, signalEl, barPe, barCe, ceChgEl, peChgEl, netEl){
+  if(!dir) return;
+  const {signal, ce_chg, pe_chg, net, pct} = dir;
+  const peW = Math.round(Math.max(5, Math.min(95, 50 + pct/2)));
+  signalEl.textContent = signal.toUpperCase();
+  signalEl.className   = 'oi-signal ' + signal;
+  barPe.style.width    = peW + '%';
+  barCe.style.width    = (100-peW) + '%';
+  if(ceChgEl) ceChgEl.textContent = (ce_chg>0?'+':'')+fmtK(ce_chg);
+  if(peChgEl) peChgEl.textContent = (pe_chg>0?'+':'')+fmtK(pe_chg);
+  if(netEl)   netEl.textContent   = (net>0?'Bullish +':'Bearish ')+fmtK(Math.abs(net));
+  if(netEl)   netEl.className     = net>0?'up':net<0?'down':'flat';
+}
+
+// =========================================================
+// Market data refresh (auto, every 5s)
+// =========================================================
+async function refreshMarket(){
+  try{
+    const d = await fetch('/api/market').then(r=>r.json());
+
+    $('indices-cards').innerHTML = d.indices.length ? d.indices.map(buildCard).join('') : '<p style="color:var(--muted);padding:8px">No data</p>';
+    $('futures-cards').innerHTML = d.futures.length ? d.futures.map(buildCard).join('') : '<p style="color:var(--muted);padding:8px">No data</p>';
+    $('stocks-tbody').innerHTML  = d.stocks.length  ? d.stocks.map(buildRow).join('')   : '<tr><td colspan="9" style="text-align:center;color:var(--muted)">No data</td></tr>';
+
+    // Sensex card
+    const sensex = d.indices.find(i=>i.symbol==='SENSEX');
+    if(sensex) $('sensex-card').innerHTML = buildCard(sensex);
+
+    // OI direction overview tab
+    if(d.oi_direction){
+      renderOiBar(d.oi_direction, $('oi-signal'), $('oi-bar-pe'), $('oi-bar-ce'), $('oi-ce-chg'), $('oi-pe-chg'), $('oi-net'));
+    }
+
+    $('dot').className = 'dot';
+    $('ts').textContent = 'Live · ' + new Date().toLocaleTimeString('en-IN');
+  }catch(e){
+    $('dot').className = 'dot err';
+    $('ts').textContent = 'Error · ' + new Date().toLocaleTimeString('en-IN');
+  }
+}
+
+// =========================================================
+// Option chain
+// =========================================================
+async function loadOptionChain(){
+  try{
+    const {chain, oi_direction} = await fetch('/api/optionchain/NIFTY').then(r=>r.json());
+    if(!chain || !chain.strikes) return;
+
+    $('oc-pcr').textContent     = chain.pcr ?? '--';
+    $('oc-atm').textContent     = chain.atm ?? '--';
+    $('oc-maxpain').textContent = chain.max_pain ?? '--';
+    $('oc-expiry').textContent  = chain.expiry ?? '--';
+
+    renderOiBar(oi_direction, $('oc-oi-signal'), $('oc-bar-pe'), $('oc-bar-ce'), null, null, null);
+
+    const maxCeOi = Math.max(...chain.strikes.map(s=>s.ce_oi), 1);
+    const maxPeOi = Math.max(...chain.strikes.map(s=>s.pe_oi), 1);
+
+    $('oc-tbody').innerHTML = chain.strikes.map(s=>{
+      const isAtm = s.atm;
+      const ceBar = Math.round((s.ce_oi/maxCeOi)*100);
+      const peBar = Math.round((s.pe_oi/maxPeOi)*100);
+      return `<tr class="${isAtm?'atm-row':''}">
+        <td class="num ce-side">${fmtK(s.ce_oi)}<div class="oi-bar-inline" style="width:${ceBar}%;background:var(--red)"></div></td>
+        <td class="num ce-side ${s.ce_coi>=0?'up':'down'}">${s.ce_coi>0?'+':''}${fmtK(s.ce_coi)}</td>
+        <td class="num ce-side">${fmtK(s.ce_vol)}</td>
+        <td class="num ce-side">${s.ce_iv?s.ce_iv.toFixed(1)+'%':'--'}</td>
+        <td class="num ce-side">${fmt(s.ce_ltp)}</td>
+        <td class="num strike-col">${s.strike}</td>
+        <td class="num pe-side">${fmt(s.pe_ltp)}</td>
+        <td class="num pe-side">${s.pe_iv?s.pe_iv.toFixed(1)+'%':'--'}</td>
+        <td class="num pe-side">${fmtK(s.pe_vol)}</td>
+        <td class="num pe-side ${s.pe_coi>=0?'up':'down'}">${s.pe_coi>0?'+':''}${fmtK(s.pe_coi)}</td>
+        <td class="num pe-side">${fmtK(s.pe_oi)}<div class="oi-bar-inline" style="width:${peBar}%;background:var(--green)"></div></td>
+      </tr>`;
+    }).join('');
+  }catch(e){
+    $('oc-tbody').innerHTML = `<tr><td colspan="11" style="text-align:center;color:var(--red)">Failed to load option chain</td></tr>`;
+  }
+}
+
+// =========================================================
+// History charts (Chart.js)
+// =========================================================
+let _pChart=null, _vChart=null, _histSym='NIFTY 50', _histInterval='5m';
+
+const _chartOpts = {
+  responsive:true, maintainAspectRatio:true,
+  plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+  scales:{
+    x:{ticks:{color:'#8b949e',maxTicksLimit:8,font:{size:10}},grid:{color:'#21262d'}},
+    y:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'#21262d'}}
+  },
+  animation:{duration:300}
+};
+
+function selectSym(sym, btn){
+  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  _histSym = sym;
+  loadHistory();
+}
+function selectInterval(iv, btn){
+  document.querySelectorAll('.ibtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  _histInterval = iv;
+  loadHistory();
+}
+
+async function loadHistory(){
+  try{
+    const sym = encodeURIComponent(_histSym);
+    const d   = await fetch(`/api/history/${sym}?interval=${_histInterval}&limit=120`).then(r=>r.json());
+    const bars = d.bars||[];
+
+    if(!bars.length){
+      $('hist-status').textContent='No data yet — data accumulates as server runs.';
+      return;
+    }
+    $('hist-status').textContent=`${bars.length} bars | ${_histSym} | ${_histInterval}`;
+
+    const labels = bars.map(b=>new Date(b.ts*1000).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}));
+    const closes = bars.map(b=>b.close);
+    const vols   = bars.map(b=>b.volume);
+    const color  = closes[closes.length-1]>=(closes[0]||0)?'#3fb950':'#f85149';
+
+    if(_pChart){ _pChart.destroy(); _pChart=null; }
+    if(_vChart){ _vChart.destroy(); _vChart=null; }
+
+    _pChart = new Chart($('priceChart'), {
+      type:'line',
+      data:{labels, datasets:[{label:_histSym, data:closes, borderColor:color, backgroundColor:color+'22', fill:true, tension:.3, pointRadius:0, borderWidth:2}]},
+      options:{..._chartOpts, plugins:{..._chartOpts.plugins, title:{display:true,text:`${_histSym} — ${_histInterval}`,color:'#e6edf3',font:{size:12}}}}
+    });
+    _vChart = new Chart($('volumeChart'), {
+      type:'bar',
+      data:{labels, datasets:[{label:'Volume', data:vols, backgroundColor:'#58a6ff44', borderColor:'#58a6ff', borderWidth:1}]},
+      options:{..._chartOpts, plugins:{..._chartOpts.plugins, title:{display:true,text:'Volume',color:'#e6edf3',font:{size:12}}}}
+    });
+  }catch(e){
+    $('hist-status').textContent = 'Error loading history.';
+  }
+}
+
+// =========================================================
+// Auto-refresh option chain every 30s when tab active
+// =========================================================
+setInterval(()=>{
+  if($('tab-nifty_oc').classList.contains('active')) loadOptionChain();
+}, 30000);
+
+// History auto-refresh every 60s
+setInterval(()=>{
+  if($('tab-history').classList.contains('active')) loadHistory();
+}, 60000);
+
+// =========================================================
+// Start
+// =========================================================
+refreshMarket();
+setInterval(refreshMarket, 5000);  // auto-refresh every 5s
+</script>
+</body>
+</html>

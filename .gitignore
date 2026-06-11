@@ -1,6 +1,9 @@
 dashboard/.env
 dashboard/__pycache__/
 dashboard/logs/
+dashboard/*.db
+dashboard/*.db-wal
+dashboard/*.db-shm
 **/__pycache__/
 *.pyc
 *.pyo
