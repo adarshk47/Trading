@@ -271,9 +271,58 @@
 <!-- ============================================================ TAB: SENSEX -->
 <div class="tab-pane" id="tab-sensex">
 
-  <div class="stitle">Sensex — Live Data</div>
+  <div class="stitle">Sensex Spot — Angel One Live</div>
   <div class="cards" id="sensex-card">
     <div class="card"><div class="sk"></div><div class="sk" style="width:55%"></div></div>
+  </div>
+
+  <!-- SENSEX OI KEY LEVELS -->
+  <div class="stitle">Sensex Option Chain Levels — BSE Live</div>
+  <div class="oi-bar-wrap" id="sx-oi-dir-wrap">
+    <div class="oi-bar-header">
+      <span class="oi-bar-title">Sensex OI Pressure (15 min)</span>
+      <span class="oi-signal neutral" id="sx-oi-signal">–</span>
+    </div>
+    <div class="oi-bar-track">
+      <div class="oi-bar-pe" id="sx-bar-pe" style="width:50%"></div>
+      <div class="oi-bar-ce" id="sx-bar-ce" style="width:50%"></div>
+    </div>
+    <div class="oi-bar-labels"><span>&#9650; PE (Bullish)</span><span>CE (Bearish) &#9660;</span></div>
+    <div class="oi-stats">
+      <div class="oi-stat"><span>Spot</span><span id="sx-spot">–</span></div>
+      <div class="oi-stat"><span>PCR</span><span id="sx-pcr">–</span></div>
+      <div class="oi-stat"><span>ATM</span><span id="sx-atm">–</span></div>
+      <div class="oi-stat"><span>Max Pain</span><span id="sx-maxpain">–</span></div>
+      <div class="oi-stat"><span>Expiry</span><span id="sx-expiry">–</span></div>
+    </div>
+  </div>
+
+  <!-- CE Resistance / PE Support highlight cards -->
+  <div class="cards" style="margin-bottom:10px">
+    <div class="card" style="border-color:var(--red)">
+      <div class="sym" style="color:var(--red)">&#9650; CE Resistance</div>
+      <div class="ltp" id="sx-ce-res" style="color:var(--red)">–</div>
+      <div class="chg" style="color:var(--muted);font-size:10px">Strike with max CE OI</div>
+    </div>
+    <div class="card" style="border-color:var(--green)">
+      <div class="sym" style="color:var(--green)">&#9660; PE Support</div>
+      <div class="ltp" id="sx-pe-sup" style="color:var(--green)">–</div>
+      <div class="chg" style="color:var(--muted);font-size:10px">Strike with max PE OI</div>
+    </div>
+  </div>
+
+  <!-- SENSEX option chain table -->
+  <div class="tbl-wrap" style="margin-bottom:12px">
+    <table class="oc-tbl">
+      <thead>
+        <tr>
+          <th class="num">CE OI</th><th class="num">Chg OI</th><th class="num">CE LTP</th>
+          <th class="num" style="background:#1d3557;color:var(--accent)">STRIKE</th>
+          <th class="num">PE LTP</th><th class="num">Chg OI</th><th class="num">PE OI</th>
+        </tr>
+      </thead>
+      <tbody id="sx-oc-tbody"><tr><td colspan="7" style="text-align:center;padding:16px;color:var(--muted)">Loading Sensex option chain…</td></tr></tbody>
+    </table>
   </div>
 
   <div class="stitle">Sensex Chart (TradingView)</div>
@@ -359,6 +408,7 @@ function switchTab(id, btn){
   $('tab-'+id).classList.add('active');
   btn.classList.add('active');
   if(id==='nifty_oc') loadOptionChain();
+  if(id==='sensex')   loadSensexChain();
   if(id==='history')  loadHistory();
 }
 
@@ -524,10 +574,53 @@ async function loadHistory(){
 }
 
 // =========================================================
+// Sensex Option Chain
+// =========================================================
+async function loadSensexChain(){
+  try{
+    const {chain, oi_direction} = await fetch('/api/optionchain/SENSEX').then(r=>r.json());
+    if(!chain || !chain.strikes) return;
+
+    $('sx-spot').textContent    = chain.underlying ? fmt(chain.underlying) : '–';
+    $('sx-pcr').textContent     = chain.pcr ?? '–';
+    $('sx-atm').textContent     = chain.atm ?? '–';
+    $('sx-maxpain').textContent = chain.max_pain ?? '–';
+    $('sx-expiry').textContent  = chain.expiry ?? '–';
+    $('sx-ce-res').textContent  = chain.ce_resistance ?? '–';
+    $('sx-pe-sup').textContent  = chain.pe_support ?? '–';
+
+    if(oi_direction) renderOiBar(oi_direction, $('sx-oi-signal'), $('sx-bar-pe'), $('sx-bar-ce'), null, null, null);
+
+    const maxCeOi = Math.max(...chain.strikes.map(s=>s.ce_oi), 1);
+    const maxPeOi = Math.max(...chain.strikes.map(s=>s.pe_oi), 1);
+
+    $('sx-oc-tbody').innerHTML = chain.strikes.map(s=>{
+      const isAtm = s.atm;
+      const ceBar = Math.round((s.ce_oi/maxCeOi)*100);
+      const peBar = Math.round((s.pe_oi/maxPeOi)*100);
+      const isCeRes = s.strike === chain.ce_resistance;
+      const isPeSup = s.strike === chain.pe_support;
+      return `<tr class="${isAtm?'atm-row':''}">
+        <td class="num ce-side" ${isCeRes?'style="color:var(--red);font-weight:700"':''}>${fmtK(s.ce_oi)}<div class="oi-bar-inline" style="width:${ceBar}%;background:var(--red)"></div></td>
+        <td class="num ce-side ${s.ce_coi>=0?'up':'down'}">${s.ce_coi>0?'+':''}${fmtK(s.ce_coi)}</td>
+        <td class="num ce-side">${fmt(s.ce_ltp)}</td>
+        <td class="num strike-col">${s.strike}${isCeRes?' 🔴':''}${isPeSup?' 🟢':''}</td>
+        <td class="num pe-side">${fmt(s.pe_ltp)}</td>
+        <td class="num pe-side ${s.pe_coi>=0?'up':'down'}">${s.pe_coi>0?'+':''}${fmtK(s.pe_coi)}</td>
+        <td class="num pe-side" ${isPeSup?'style="color:var(--green);font-weight:700"':''}>${fmtK(s.pe_oi)}<div class="oi-bar-inline" style="width:${peBar}%;background:var(--green)"></div></td>
+      </tr>`;
+    }).join('');
+  }catch(e){
+    $('sx-oc-tbody').innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--red)">Failed to load Sensex option chain</td></tr>`;
+  }
+}
+
+// =========================================================
 // Auto-refresh option chain every 30s when tab active
 // =========================================================
 setInterval(()=>{
   if($('tab-nifty_oc').classList.contains('active')) loadOptionChain();
+  if($('tab-sensex').classList.contains('active'))   loadSensexChain();
 }, 30000);
 
 // History auto-refresh every 60s
